@@ -18,11 +18,11 @@ export const questions: Question[] = [
     question: '¿Qué significa realmente respetar a los demás?',
     options: [
       'Aceptar únicamente a quienes piensan igual',
-      'Tratar a todos con dignidad aunque sean diferentes',
       'Evitar relacionarse con personas distintas',
+      'Tratar a todos con dignidad aunque sean diferentes',
       'Tolerar solo a los amigos'
     ],
-    correctAnswer: 1,
+    correctAnswer: 2,
     explanation: 'El respeto implica reconocer el valor de todas las personas sin importar sus diferencias.'
   },
   {
@@ -90,11 +90,11 @@ export const questions: Question[] = [
     question: '¿Qué es una microdiscriminación?',
     options: [
       'Una ley injusta',
-      'Un pequeño comentario o acción que puede excluir o herir',
       'Un conflicto físico',
+      'Un pequeño comentario o acción que puede excluir o herir',
       'Una discusión entre amigos'
     ],
-    correctAnswer: 1,
+    correctAnswer: 2,
     explanation: 'Las microdiscriminaciones son actos sutiles que pueden afectar a las personas.'
   },
   {
@@ -114,11 +114,11 @@ export const questions: Question[] = [
     question: '¿Qué deberías hacer si un compañero es víctima de bullying?',
     options: [
       'Ignorarlo para evitar problemas',
-      'Apoyarlo y buscar ayuda de un adulto o docente',
       'Unirte para no quedar excluido',
+      'Apoyarlo y buscar ayuda de un adulto o docente',
       'Grabar videos'
     ],
-    correctAnswer: 1,
+    correctAnswer: 2,
     explanation: 'Apoyar a la víctima y reportar el bullying ayuda a detenerlo.'
   },
   {
@@ -234,11 +234,11 @@ export const questions: Question[] = [
     question: '¿Qué puede pasar cuando una persona se siente constantemente excluida en la escuela?',
     options: [
       'Nada importante',
-      'Puede afectar su autoestima y bienestar emocional',
       'Aprende a ser más fuerte',
-      'Mejora sus notas automáticamente'
+      'Mejora sus notas automáticamente',
+      'Puede afectar su autoestima y bienestar emocional'
     ],
-    correctAnswer: 1,
+    correctAnswer: 3,
     explanation: 'La exclusión puede afectar seriamente la salud emocional y el aprendizaje.'
   }
 ];
