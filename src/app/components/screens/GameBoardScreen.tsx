@@ -14,7 +14,7 @@ export function GameBoardScreen() {
     if (gameState.sessionCode) navigator.clipboard.writeText(gameState.sessionCode).catch(() => {});
   };
 
-  const canRoll = isMyTurn && !busy && gameState.diceValue === null;
+  const canRoll = isMyTurn && !busy && !gameState.paused && gameState.diceValue === null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 p-4 md:p-6">

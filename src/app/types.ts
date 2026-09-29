@@ -29,7 +29,7 @@ export interface Question {
 export interface GameEvent {
   id: string;           // cambia en cada evento para disparar la notificación
   playerName: string;
-  kind: CellType | 'answer-correct' | 'answer-wrong';
+  kind: CellType | 'answer-correct' | 'answer-wrong' | 'host';
   title: string;
   message: string;
 }
@@ -62,4 +62,5 @@ export interface GameState {
   questionAnswer?: number | null; // opción elegida (se revela a todos)
   questionEffect?: number | null; // casillas que avanza/retrocede tras responder
   lastEvent?: GameEvent | null;
+  paused?: boolean;               // pausa del docente (anfitrión)
 }

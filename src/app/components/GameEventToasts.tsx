@@ -12,6 +12,7 @@ const ICONS: Record<GameEvent['kind'], string> = {
   normal: '•',
   'answer-correct': '🎉',
   'answer-wrong': '💭',
+  host: '👩‍🏫',
 };
 
 const POSITIVE: GameEvent['kind'][] = ['teacher-action', 'reward', 'answer-correct'];

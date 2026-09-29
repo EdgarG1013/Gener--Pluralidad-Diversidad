@@ -28,6 +28,10 @@ interface GameContextType {
   revealAnswer: (optionIndex: number) => void;
   answerQuestion: () => void;
   resetGame: () => void;
+  isHost: boolean;
+  togglePause: () => void;
+  skipTurn: () => void;
+  kickPlayer: (playerId: string) => void;
   setScreen: (screen: GameScreen) => void;
   joinSession: (code: string) => Promise<boolean>;
 }
@@ -441,7 +445,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const rollDice = () => {
     const s = stateRef.current;
-    if (s.isRollingDice || s.isMoving) return;
+    if (s.isRollingDice || s.isMoving || s.paused) return;
     if (pidRef.current !== s.players[s.currentPlayerIndex]?.id) return;
 
     applyState({ ...s, isRollingDice: true, diceValue: null });
@@ -513,7 +517,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   /** El jugador activo elige opción: se revela a todos con la explicación. */
   const revealAnswer = (optionIndex: number) => {
     const s = stateRef.current;
-    if (!s.currentQuestion || s.questionAnswer != null) return;
+    if (!s.currentQuestion || s.questionAnswer != null || s.paused) return;
     if (pidRef.current !== s.players[s.currentPlayerIndex]?.id) return;
     const isCorrect = optionIndex === s.currentQuestion.correctAnswer;
     const questionEffect = isCorrect
@@ -527,7 +531,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const answerQuestion = () => {
     const s = stateRef.current;
-    if (!s.currentQuestion || s.questionAnswer == null) return;
+    if (!s.currentQuestion || s.questionAnswer == null || s.paused) return;
     if (pidRef.current !== s.players[s.currentPlayerIndex]?.id) return;
     const isCorrect = s.questionAnswer === s.currentQuestion.correctAnswer;
     const effect = s.questionEffect ?? (isCorrect ? 1 : -1);
@@ -592,6 +596,84 @@ export function GameProvider({ children }: { children: ReactNode }) {
     applyState({ ...initialState, board: boardCells });
   };
 
+  // ─── Controles del docente (anfitrión) ────────────────────────────────────
+  const isHost = !!myPlayerId && myPlayerId === gameState.hostPlayerId;
+
+  const hostEvent = (title: string, message: string): GameEvent =>
+    ({ id: mkEventId(), playerName: '', kind: 'host', title, message });
+
+  const canHostAct = () => {
+    const s = stateRef.current;
+    return pidRef.current === s.hostPlayerId && s.sessionStatus === 'playing'
+      && !s.isRollingDice && !s.isMoving;
+  };
+
+  const togglePause = () => {
+    if (!canHostAct()) return;
+    const s = stateRef.current;
+    const paused = !s.paused;
+    applySync({
+      ...s,
+      paused,
+      lastEvent: hostEvent(paused ? 'Partida en pausa' : 'Partida reanudada',
+        paused ? 'El docente pausó el juego.' : '¡A seguir jugando!'),
+    });
+  };
+
+  /** Pasa el turno del jugador actual (p. ej. si se desconectó). */
+  const skipTurn = () => {
+    if (!canHostAct()) return;
+    if (nextTurnTimerRef.current) clearTimeout(nextTurnTimerRef.current);
+    const s = stateRef.current;
+    const name = s.players[s.currentPlayerIndex]?.name ?? '';
+    const base: GameState = {
+      ...s, screen: 'game-board', currentQuestion: null, questionAnswer: null, questionEffect: null,
+    };
+    applySync({ ...nextTurnState(base), lastEvent: hostEvent('Turno saltado', `El docente pasó el turno de ${name}.`) });
+  };
+
+  const kickPlayer = (playerId: string) => {
+    if (!canHostAct()) return;
+    const s = stateRef.current;
+    if (playerId === s.hostPlayerId) return;
+    const idx = s.players.findIndex(p => p.id === playerId);
+    if (idx < 0) return;
+    if (nextTurnTimerRef.current) clearTimeout(nextTurnTimerRef.current);
+
+    const name = s.players[idx].name;
+    const players = s.players.filter(p => p.id !== playerId);
+    const wasCurrent = idx === s.currentPlayerIndex;
+    let current = s.currentPlayerIndex;
+    if (idx < current) current -= 1;
+    if (current >= players.length) current = 0;
+
+    const next: GameState = {
+      ...s,
+      players,
+      currentPlayerIndex: current,
+      ...(wasCurrent
+        ? { screen: 'game-board' as GameScreen, currentQuestion: null, questionAnswer: null, questionEffect: null, diceValue: null }
+        : {}),
+      lastEvent: hostEvent('Jugador retirado', `${name} salió de la partida.`),
+    };
+    applySync(next);
+  };
+
+  // Si el docente me retiró de la sala, volver al inicio
+  useEffect(() => {
+    const s = gameState;
+    if (!myPlayerId || !s.sessionCode || s.isSpectator || s.players.length === 0) return;
+    if (!s.players.some(p => p.id === myPlayerId)) {
+      resetGame();
+      applyState({
+        ...initialState,
+        board: boardCells,
+        lastEvent: hostEvent('Saliste de la partida', 'El docente te retiró de la sala.'),
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.players, myPlayerId]);
+
   const joinSession = async (code: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('game_sessions')
@@ -616,7 +698,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     <GameContext.Provider value={{
       gameState, myPlayerId, pendingAction, pendingJoinCode,
       initCreate, initJoin, createRoom, joinRoom, startGame,
-      rollDice, revealAnswer, answerQuestion, resetGame, setScreen, joinSession,
+      rollDice, revealAnswer, answerQuestion, resetGame,
+      isHost, togglePause, skipTurn, kickPlayer, setScreen, joinSession,
     }}>
       {children}
     </GameContext.Provider>
