@@ -1,14 +1,11 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
-import { BoardCell } from '../BoardCell';
+import { Board } from '../Board';
 import { Star, Trophy, Eye } from 'lucide-react';
 import { Button } from '../Button';
 
 export function SpectatorScreen() {
   const { gameState, resetGame } = useGame();
-
-  const getPlayersOnCell = (cellId: number) =>
-    gameState.players.filter(p => p.position === cellId);
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
@@ -48,14 +45,8 @@ export function SpectatorScreen() {
                 )}
               </div>
 
-              <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
-                {gameState.board.map(cell => (
-                  <BoardCell
-                    key={cell.id}
-                    cell={cell}
-                    players={getPlayersOnCell(cell.id)}
-                  />
-                ))}
+              <div className="mb-6">
+                <Board board={gameState.board} players={gameState.players} currentPlayerIndex={gameState.currentPlayerIndex} />
               </div>
             </div>
           </div>

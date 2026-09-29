@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
-import { BoardCell } from '../BoardCell';
+import { Board } from '../Board';
 import { Dice } from '../Dice';
 import { Star, Trophy, Share2, Eye } from 'lucide-react';
 
@@ -9,9 +9,6 @@ export function GameBoardScreen() {
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   const isMyTurn = myPlayerId === currentPlayer?.id;
   const busy = gameState.isRollingDice || gameState.isMoving;
-
-  const getPlayersOnCell = (cellId: number) =>
-    gameState.players.filter(p => p.position === cellId);
 
   const copyCode = () => {
     if (gameState.sessionCode) navigator.clipboard.writeText(gameState.sessionCode).catch(() => {});
@@ -82,14 +79,8 @@ export function GameBoardScreen() {
               </div>
 
               {/* Tablero */}
-              <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 mb-6">
-                {gameState.board.map(cell => (
-                  <BoardCell
-                    key={cell.id}
-                    cell={cell}
-                    players={getPlayersOnCell(cell.id)}
-                  />
-                ))}
+              <div className="mb-6">
+                <Board board={gameState.board} players={gameState.players} currentPlayerIndex={gameState.currentPlayerIndex} />
               </div>
 
               {/* Dado y controles */}
@@ -182,25 +173,6 @@ export function GameBoardScreen() {
                     </div>
                   );
                 })}
-              </div>
-
-              {/* Leyenda */}
-              <div className="mt-5 pt-5 border-t border-gray-100">
-                <p className="text-xs text-gray-500 mb-2 text-center font-semibold">Casillas:</p>
-                <div className="space-y-1.5 text-xs">
-                  {[
-                    { color: 'text-blue-600', symbol: '❓', label: 'Pregunta' },
-                    { color: 'text-emerald-600', symbol: '⬆️', label: 'Acción positiva' },
-                    { color: 'text-red-600', symbol: '🚧', label: 'Barrera (−2)' },
-                    { color: 'text-amber-600', symbol: '⭐', label: 'Premio' },
-                    { color: 'text-slate-600', symbol: '⏳', label: 'Pierde turno' },
-                  ].map(({ symbol, label }) => (
-                    <div key={label} className="flex items-center gap-1.5">
-                      <span className="text-sm">{symbol}</span>
-                      <span className="text-gray-600">{label}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
