@@ -19,25 +19,25 @@ export const boardCells: Cell[] = Array.from({ length: 30 }, (_, i) => {
 
   // Black cells have special effects
   const blackCellEffects = [
-    { id: 3,  type: 'teacher-action' as const, label: 'Adaptación curricular', effect: 3 },
-    { id: 5,  type: 'reward'         as const, label: 'Empatía',               effect: 2 },
-    { id: 7,  type: 'barrier'        as const, label: 'Falta de accesibilidad', effect: -2 },
-    { id: 9,  type: 'reward'         as const, label: 'Buena acción',           effect: 2 },
-    { id: 11, type: 'barrier'        as const, label: 'Indiferencia',           effect: -2 },
-    { id: 13, type: 'teacher-action' as const, label: 'Grupos inclusivos',      effect: 3 },
-    { id: 15, type: 'skip-turn'      as const, label: 'Pierde turno',           effect: 0 },
-    { id: 17, type: 'barrier'        as const, label: 'Exclusión',              effect: -3 },
-    { id: 19, type: 'reward'         as const, label: 'Solidaridad',            effect: 2 },
-    { id: 21, type: 'teacher-action' as const, label: 'Comunidad inclusiva',    effect: 2 },
-    { id: 23, type: 'teacher-action' as const, label: 'Materiales adaptados',   effect: 4 },
-    { id: 25, type: 'barrier'        as const, label: 'Discriminación',         effect: -2 },
-    { id: 27, type: 'reward'         as const, label: 'Liderazgo positivo',     effect: 2 },
-    { id: 29, type: 'teacher-action' as const, label: 'Apoyo especializado',    effect: 3 },
+    { id: 3,  type: 'teacher-action' as const, label: 'Adaptación curricular', effect: 3, description: 'El docente adapta la actividad para que todos puedan aprender.' },
+    { id: 5,  type: 'reward'         as const, label: 'Empatía',               effect: 2, description: 'Ponerse en el lugar del otro nos acerca como grupo.' },
+    { id: 7,  type: 'barrier'        as const, label: 'Falta de accesibilidad', effect: -2, description: 'Un espacio sin rampas ni ascensor deja fuera a quien usa silla de ruedas.' },
+    { id: 9,  type: 'reward'         as const, label: 'Buena acción',           effect: 2, description: 'Un pequeño gesto de ayuda cambia el día de alguien.' },
+    { id: 11, type: 'barrier'        as const, label: 'Indiferencia',           effect: -2, description: 'Mirar hacia otro lado ante una injusticia también excluye.' },
+    { id: 13, type: 'teacher-action' as const, label: 'Grupos inclusivos',      effect: 3, description: 'Formar grupos diversos enriquece el trabajo de todos.' },
+    { id: 15, type: 'skip-turn'      as const, label: 'Pierde turno',           effect: 0, description: 'Tómate un turno para reflexionar sobre cómo incluir a los demás.' },
+    { id: 17, type: 'barrier'        as const, label: 'Exclusión',              effect: -3, description: 'Dejar a alguien fuera afecta su aprendizaje y su bienestar.' },
+    { id: 19, type: 'reward'         as const, label: 'Solidaridad',            effect: 2, description: 'Apoyarnos unos a otros hace avanzar a toda la clase.' },
+    { id: 21, type: 'teacher-action' as const, label: 'Comunidad inclusiva',    effect: 2, description: 'Una comunidad que acoge a todas las personas crece junta.' },
+    { id: 23, type: 'teacher-action' as const, label: 'Materiales adaptados',   effect: 4, description: 'Materiales en braille, audio o lectura fácil abren el aprendizaje a más estudiantes.' },
+    { id: 25, type: 'barrier'        as const, label: 'Discriminación',         effect: -2, description: 'Tratar distinto a alguien por quién es frena a todo el grupo.' },
+    { id: 27, type: 'reward'         as const, label: 'Liderazgo positivo',     effect: 2, description: 'Liderar es también dar voz a quienes no suelen tenerla.' },
+    { id: 29, type: 'teacher-action' as const, label: 'Apoyo especializado',    effect: 3, description: 'El apoyo de especialistas ayuda a que cada estudiante alcance su potencial.' },
   ];
 
   const specialCell = blackCellEffects.find(cell => cell.id === id);
   if (specialCell) {
-    return { id, type: specialCell.type, label: specialCell.label, effect: specialCell.effect };
+    return { id, type: specialCell.type, label: specialCell.label, effect: specialCell.effect, description: specialCell.description };
   }
 
   return { id, type: 'normal', label: '', effect: 0 };

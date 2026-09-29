@@ -243,6 +243,9 @@ export const questions: Question[] = [
   }
 ];
 
-export function getRandomQuestion(): Question {
-  return questions[Math.floor(Math.random() * questions.length)];
+/** Devuelve una pregunta no usada; si ya salieron todas, vuelve a empezar. */
+export function getRandomQuestion(usedIds: number[] = []): Question {
+  const pool = questions.filter(q => !usedIds.includes(q.id));
+  const source = pool.length > 0 ? pool : questions;
+  return source[Math.floor(Math.random() * source.length)];
 }

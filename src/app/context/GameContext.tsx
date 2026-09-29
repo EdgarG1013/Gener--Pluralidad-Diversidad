@@ -6,9 +6,9 @@ import React, {
   ReactNode,
   useEffect,
 } from 'react';
-import { GameState, Player, GameScreen, CellType } from '../types';
+import { GameState, Player, GameScreen, CellType, Cell, GameEvent } from '../types';
 import { boardCells } from '../data/boardCells';
-import { getRandomQuestion } from '../data/questions';
+import { getRandomQuestion, questions } from '../data/questions';
 import { playerColors } from '../data/avatars';
 import { supabase } from '../../lib/supabase';
 
@@ -25,7 +25,8 @@ interface GameContextType {
   joinRoom: (name: string, avatar: string) => Promise<{ ok: boolean; reason?: string }>;
   startGame: () => Promise<void>;
   rollDice: () => void;
-  answerQuestion: (isCorrect: boolean) => void;
+  revealAnswer: (optionIndex: number) => void;
+  answerQuestion: () => void;
   resetGame: () => void;
   setScreen: (screen: GameScreen) => void;
   joinSession: (code: string) => Promise<boolean>;
@@ -87,7 +88,7 @@ function computeMove(board: typeof boardCells, from: number, spaces: number): Mo
   const type = cell?.type ?? 'normal';
 
   if (type === 'barrier') {
-    const back = buildPath(landing, -2);
+    const back = buildPath(landing, cell?.effect ?? -2);
     return { path: [...main, ...back], finalPos: back.at(-1) ?? landing, cellEffect: 'barrier' };
   }
   if (type === 'teacher-action' || type === 'reward') {
@@ -106,6 +107,27 @@ function nextTurnState(state: GameState): GameState {
     idx = (idx + 1) % players.length;
   }
   return { ...state, players, currentPlayerIndex: idx, diceValue: null, isRollingDice: false, isMoving: false };
+}
+
+function mkEventId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/** Evento educativo al caer en una casilla especial. */
+function cellEvent(cell: Cell | undefined, playerName: string): GameEvent | null {
+  if (!cell || cell.type === 'normal' || cell.type === 'question') return null;
+  const effect = cell.effect ?? 0;
+  const move =
+    cell.type === 'skip-turn' ? 'Pierde el próximo turno.'
+    : effect > 0 ? `Avanza ${effect} casillas.`
+    : `Retrocede ${Math.abs(effect)} casillas.`;
+  return {
+    id: mkEventId(),
+    playerName,
+    kind: cell.type,
+    title: `${playerName}: ${cell.label}`,
+    message: `${cell.description ?? ''} ${move}`.trim(),
+  };
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -442,11 +464,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
       });
 
       const finalState: GameState = (() => {
-        const base = { ...cur, players: updatedPlayers, diceValue, isRollingDice: false, isMoving: false };
+        const landing = buildPath(from, diceValue).at(-1) ?? from;
+        const landedCell = cur.board.find(c => c.id === landing);
+        const lastEvent = cellEffect && cellEffect !== 'question'
+          ? cellEvent(landedCell, cur.players[playerIndex].name)
+          : cur.lastEvent ?? null;
+        const base = { ...cur, players: updatedPlayers, diceValue, isRollingDice: false, isMoving: false, lastEvent };
         if (finalPos === 30)
           return { ...base, winner: updatedPlayers[playerIndex], screen: 'victory' as GameScreen, sessionStatus: 'finished' as const };
-        if (cellEffect === 'question')
-          return { ...base, currentQuestion: getRandomQuestion(), screen: 'question' as GameScreen };
+        if (cellEffect === 'question') {
+          const used = cur.usedQuestionIds ?? [];
+          const q = getRandomQuestion(used);
+          const usedIds = used.length >= questions.length ? [q.id] : [...used, q.id];
+          return { ...base, currentQuestion: q, usedQuestionIds: usedIds, questionAnswer: null, questionEffect: null, screen: 'question' as GameScreen };
+        }
         return base;
       })();
 
@@ -479,11 +510,37 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }, 1500);
   };
 
-  const answerQuestion = (isCorrect: boolean) => {
+  /** El jugador activo elige opción: se revela a todos con la explicación. */
+  const revealAnswer = (optionIndex: number) => {
     const s = stateRef.current;
-    const effect = isCorrect
+    if (!s.currentQuestion || s.questionAnswer != null) return;
+    if (pidRef.current !== s.players[s.currentPlayerIndex]?.id) return;
+    const isCorrect = optionIndex === s.currentQuestion.correctAnswer;
+    const questionEffect = isCorrect
       ? Math.floor(Math.random() * 3) + 1
       : -(Math.floor(Math.random() * 2) + 1);
+    const next = { ...s, questionAnswer: optionIndex, questionEffect };
+    applyState(next);
+    persist(next);
+    broadcastState(next);
+  };
+
+  const answerQuestion = () => {
+    const s = stateRef.current;
+    if (!s.currentQuestion || s.questionAnswer == null) return;
+    if (pidRef.current !== s.players[s.currentPlayerIndex]?.id) return;
+    const isCorrect = s.questionAnswer === s.currentQuestion.correctAnswer;
+    const effect = s.questionEffect ?? (isCorrect ? 1 : -1);
+    const name = s.players[s.currentPlayerIndex].name;
+    const lastEvent: GameEvent = {
+      id: mkEventId(),
+      playerName: name,
+      kind: isCorrect ? 'answer-correct' : 'answer-wrong',
+      title: isCorrect ? `¡${name} acertó!` : `${name} sigue aprendiendo`,
+      message: isCorrect
+        ? `Avanza ${effect} ${effect === 1 ? 'casilla' : 'casillas'}.`
+        : `Retrocede ${Math.abs(effect)} ${effect === -1 ? 'casilla' : 'casillas'}.`,
+    };
 
     const playerIndex = s.currentPlayerIndex;
     const from = s.players[playerIndex].position;
@@ -494,13 +551,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
       i === playerIndex ? { ...p, position: finalPos } : p);
 
     const finalState: GameState = finalPos === 30
-      ? { ...s, players: updatedPlayers, currentQuestion: null, screen: 'victory', sessionStatus: 'finished', winner: updatedPlayers[playerIndex], isMoving: false }
-      : { ...s, players: updatedPlayers, currentQuestion: null, screen: 'game-board', isMoving: false };
+      ? { ...s, players: updatedPlayers, currentQuestion: null, questionAnswer: null, questionEffect: null, lastEvent, screen: 'victory', sessionStatus: 'finished', winner: updatedPlayers[playerIndex], isMoving: false }
+      : { ...s, players: updatedPlayers, currentQuestion: null, questionAnswer: null, questionEffect: null, lastEvent, screen: 'game-board', isMoving: false };
 
     const nts = nextTurnState(finalState);
 
     // Cerrar pantalla de pregunta para todos
-    const transition: GameState = { ...s, currentQuestion: null, screen: 'game-board', isMoving: true };
+    const transition: GameState = { ...s, currentQuestion: null, questionAnswer: null, questionEffect: null, screen: 'game-board', isMoving: true };
     applyState(transition);
     broadcastState({ ...transition, isMoving: false });
 
@@ -559,7 +616,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     <GameContext.Provider value={{
       gameState, myPlayerId, pendingAction, pendingJoinCode,
       initCreate, initJoin, createRoom, joinRoom, startGame,
-      rollDice, answerQuestion, resetGame, setScreen, joinSession,
+      rollDice, revealAnswer, answerQuestion, resetGame, setScreen, joinSession,
     }}>
       {children}
     </GameContext.Provider>

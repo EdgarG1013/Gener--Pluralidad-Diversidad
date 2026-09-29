@@ -7,6 +7,7 @@ import { GameBoardScreen } from './components/screens/GameBoardScreen';
 import { QuestionScreen } from './components/screens/QuestionScreen';
 import { VictoryScreen } from './components/screens/VictoryScreen';
 import { SpectatorScreen } from './components/screens/SpectatorScreen';
+import { GameEventToasts } from './components/GameEventToasts';
 
 function GameRouter() {
   const { gameState } = useGame();
@@ -38,6 +39,7 @@ export default function App() {
     <GameProvider>
       <div className="size-full">
         <GameRouter />
+        <GameEventToasts />
       </div>
     </GameProvider>
   );

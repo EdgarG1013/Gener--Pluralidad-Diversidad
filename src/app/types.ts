@@ -5,6 +5,7 @@ export interface Cell {
   type: CellType;
   label: string;
   effect?: number;
+  description?: string; // mensaje educativo al caer en la casilla
 }
 
 export interface Player {
@@ -23,6 +24,14 @@ export interface Question {
   options: string[];
   correctAnswer: number;
   explanation: string;
+}
+
+export interface GameEvent {
+  id: string;           // cambia en cada evento para disparar la notificación
+  playerName: string;
+  kind: CellType | 'answer-correct' | 'answer-wrong';
+  title: string;
+  message: string;
 }
 
 export type GameScreen =
@@ -49,4 +58,8 @@ export interface GameState {
   sessionStatus: 'lobby' | 'playing' | 'finished';
   hostPlayerId: string | null;
   isSpectator: boolean; // solo local, no se sincroniza
+  usedQuestionIds?: number[];     // preguntas ya usadas en la partida
+  questionAnswer?: number | null; // opción elegida (se revela a todos)
+  questionEffect?: number | null; // casillas que avanza/retrocede tras responder
+  lastEvent?: GameEvent | null;
 }
