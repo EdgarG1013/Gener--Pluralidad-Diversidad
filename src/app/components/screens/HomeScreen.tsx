@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '../Button';
 import { useGame } from '../../context/GameContext';
 import { Sparkles, Users, Heart, Star, Eye, LogIn } from 'lucide-react';
@@ -10,6 +10,24 @@ export function HomeScreen() {
   const [joinError, setJoinError] = useState('');
   const [spectatorError, setSpectatorError] = useState('');
   const [loadingSpectator, setLoadingSpectator] = useState(false);
+
+  // Enlace de invitación (?sala=CODIGO, p. ej. desde el QR del proyector)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sala = params.get('sala');
+    const ver = params.get('ver'); // modo proyector
+    if (!sala && !ver) return;
+    if (sala) setJoinCode(sala.toUpperCase().slice(0, 8));
+    if (ver) {
+      setSpectatorCode(ver.toUpperCase());
+      joinSession(ver).then(ok => { if (!ok) setSpectatorError('Código no encontrado'); });
+    }
+    params.delete('sala');
+    params.delete('ver');
+    const qs = params.toString();
+    window.history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : ''));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleJoinAsPlayer = () => {
     if (!joinCode.trim()) return;

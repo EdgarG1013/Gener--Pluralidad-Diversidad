@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { Button } from '../Button';
-import { Play, Copy, Check, Users, Loader2, ArrowLeft } from 'lucide-react';
+import { Play, Copy, Check, Users, Loader2, ArrowLeft, Monitor } from 'lucide-react';
 import { useState } from 'react';
 
 export function LobbyScreen() {
@@ -53,6 +53,15 @@ export function LobbyScreen() {
             <p className="text-gray-500 text-sm">
               Comparte este código para que tus amigos se unan desde sus dispositivos
             </p>
+            <a
+              href={`${window.location.pathname}?ver=${code}`}
+              target="_blank"
+              rel="noopener"
+              className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+            >
+              <Monitor className="w-4 h-4" />
+              Abrir modo proyector (con QR para unirse)
+            </a>
           </div>
 
           {/* Lista de jugadores */}
