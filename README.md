@@ -3,7 +3,7 @@
 
   ## Para ejecutar el codigo despues de clonar el repositorio:
 
-  ejecuta `npm i` to install the dependencies.
+  ejecuta `npm i` para instalar las dependencias.
 
-  ejecuta `npm run dev` to start the development server.
+  ejecuta `npm run dev` para iniciar el servidor de desarrollo.
   
